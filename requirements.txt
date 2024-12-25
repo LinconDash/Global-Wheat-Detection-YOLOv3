@@ -1,0 +1,11 @@
+ipykernel
+flask
+numpy
+pandas
+matplotlib
+tensorflow
+pathlib
+tqdm
+pillow
+albumentations
+-e.
