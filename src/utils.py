@@ -3,11 +3,12 @@ import sys
 import numpy as np
 import pandas as pd
 import matplotlib.pyplot as plt
+import tensorflow as tf
 
 from tqdm.auto import tqdm
 from PIL import Image, ImageDraw, ImageEnhance
+from src.components.model import YOLOv3
 from src.exception import CustomException
-from typing import List, Dict, Tuple
 
 def str_to_float(group):
     try:
@@ -84,5 +85,26 @@ def show_images(n:int):
         fig, axes = plt.subplots(1, n, figsize=(20*n, 20*n))
         for i, img_pixel in enumerate(image_pixels):
             axes[i].imshow(img_pixel)
+    except Exception as e:
+        raise CustomException(e, sys)
+
+def load_model(save_dir, filename="yolov3_model.h5"):
+    load_path = os.path.join(save_dir, filename)
+    if not os.path.exists(load_path):
+        raise FileNotFoundError(f"No such model file exists : {load_path}")
+    
+    model = tf.keras.models.load_model(
+        load_path,
+        custom_objects={"YOLOv3":YOLOv3}
+    )
+    print(f"Model loaded successfully from : {load_path}")
+    return model
+
+def save_model(model, save_dir, filename="yolov3_model.h5"):
+    try:
+        os.makedirs(save_dir, exist_ok=True)
+        save_path = os.path.join(save_dir, filename)
+        model.save(save_path)
+        print(f"Model saved successfully at : {save_path}")
     except Exception as e:
         raise CustomException(e, sys)
