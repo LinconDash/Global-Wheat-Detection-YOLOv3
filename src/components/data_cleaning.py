@@ -27,7 +27,7 @@ class DataCleaner:
         print("\nCleaning train data labels : ")
         self.train_labels = self.clean_labels(
             labels=self.data.train_labels,
-            image_ids=self.data.train_pixels.keys(),
+            image_ids=list(self.data.train_pixels.keys()),
             tiny_area=self.config.T_threshold,
             huge_area=self.config.H_threshold
         )
@@ -37,7 +37,7 @@ class DataCleaner:
         print("Cleaning validation data labels : ")
         self.val_labels = self.clean_labels(
             labels=self.data.val_labels,
-            image_ids=self.data.val_pixels.keys(),
+            image_ids=list(self.data.val_pixels.keys()),
             tiny_area=self.config.T_threshold,
             huge_area=self.config.H_threshold
         )

@@ -28,13 +28,13 @@ class YOLOLoss(Loss):
     def get_mask(self, y_true):
         try:
             anchor_one_mask = tf.where(
-                y_true[:,:,:,:, 0] == 0,
+                y_true[:,:,:, 0] == 0,
                 0.5, 
                 5.0
             )
 
             anchor_two_mask = tf.where(
-                y_true[:,:,:,:, 5] == 0,
+                y_true[:,:,:, 5] == 0,
                 0.5, 
                 5.0
             )
