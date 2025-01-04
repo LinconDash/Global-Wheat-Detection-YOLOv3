@@ -108,3 +108,97 @@ def save_model(model, save_dir, filename="yolov3_model.h5"):
         print(f"Model saved successfully at : {save_path}")
     except Exception as e:
         raise CustomException(e, sys)
+
+def predictions_to_bboxes(bboxes, image_grid):
+    """
+        Since we converted the image into 32X32 grid 
+        we need to convert the predictions to bboxes for entire image for vizualization
+        Converting from [x, y, w, h] to [x_min, y_min, x_max, y_max] along with the entire image dimension. (0 to 255)
+    """
+    bboxes = bboxes.copy()
+    
+    im_width = (image_grid[:,:,2] * 32)
+    im_height = (image_grid[:,:,3] * 32)
+    
+    # descale x,y
+    bboxes[:,:,1] = (bboxes[:,:,1] * image_grid[:,:,2]) + image_grid[:,:,0]
+    bboxes[:,:,2] = (bboxes[:,:,2] * image_grid[:,:,3]) + image_grid[:,:,1]
+    bboxes[:,:,6] = (bboxes[:,:,6] * image_grid[:,:,2]) + image_grid[:,:,0]
+    bboxes[:,:,7] = (bboxes[:,:,7] * image_grid[:,:,3]) + image_grid[:,:,1]
+    
+    # descale width,height
+    bboxes[:,:,3] = bboxes[:,:,3] * im_width 
+    bboxes[:,:,4] = bboxes[:,:,4] * im_height
+    bboxes[:,:,8] = bboxes[:,:,8] * im_width 
+    bboxes[:,:,9] = bboxes[:,:,9] * im_height
+    
+    # centre x,y to top left x,y
+    bboxes[:,:,1] = bboxes[:,:,1] - (bboxes[:,:,3] / 2)
+    bboxes[:,:,2] = bboxes[:,:,2] - (bboxes[:,:,4] / 2)
+    bboxes[:,:,6] = bboxes[:,:,6] - (bboxes[:,:,8] / 2)
+    bboxes[:,:,7] = bboxes[:,:,7] - (bboxes[:,:,9] / 2)
+    
+    # width,heigth to x_max,y_max
+    bboxes[:,:,3] = bboxes[:,:,1] + bboxes[:,:,3]
+    bboxes[:,:,4] = bboxes[:,:,2] + bboxes[:,:,4]
+    bboxes[:,:,8] = bboxes[:,:,6] + bboxes[:,:,8]
+    bboxes[:,:,9] = bboxes[:,:,7] + bboxes[:,:,9]
+    
+    return bboxes
+
+def intersection_over_union(prediction, target):
+    """
+        Returns the intersection over union area that is used for non max suppression
+        It returns for one anchor box only
+    """
+    box1_x1 = prediction[..., 0]
+    box1_y1 = prediction[..., 1]
+    box1_x2 = prediction[..., 2]
+    box1_y2 = prediction[..., 3]  
+    box2_x1 = target[..., 0]
+    box2_y1 = target[..., 1]
+    box2_x2 = target[..., 2]
+    box2_y2 = target[..., 3]
+
+    x1 = max(box1_x1, box2_x1)
+    x2 = min(box1_x2, box2_x2)
+    y1= max(box1_y1, box2_y1)
+    y2 = min(box1_y2, box2_y2)
+
+    intersection = (x2 - x1) * (y2 - y1)
+
+    box1_area = abs((box1_x2 - box1_x1) * (box1_y2 - box1_y1))
+    box2_area = abs((box2_x2 - box2_x1) * (box2_y2 - box2_y1))
+    
+    return intersection / (box1_area + box2_area - intersection + 1e-6)
+
+def non_max_suppression(bboxes, iou_threshold, prob_threshold):
+    bboxes = bboxes.reshape(-1, 10)
+    
+    # Combine anchor box probabilities and filter by the threshold
+    combined_bboxes = []
+    for box in bboxes:
+        if box[0] > prob_threshold or box[5] > prob_threshold:
+            # Select the anchor with the higher probability
+            if box[0] >= box[5]:
+                combined_bboxes.append([box[0], *box[1:5]])  # First anchor
+            else:
+                combined_bboxes.append([box[5], *box[6:10]])  # Second anchor
+
+    # Sort by object probability
+    combined_bboxes = sorted(combined_bboxes, key=lambda x: x[0], reverse=True)
+    combined_bboxes = np.array(combined_bboxes)
+    bboxes_after_nms = []
+
+    # Apply NMS
+    while len(combined_bboxes) > 0:
+        chosen_box = combined_bboxes[0]  # Select the box with the highest probability
+        bboxes_after_nms.append(chosen_box)
+        combined_bboxes = combined_bboxes[1:]  # Remove the chosen box
+        combined_bboxes = [
+            box for box in combined_bboxes
+            if intersection_over_union(chosen_box[1:5], box[1:5]) < iou_threshold
+        ]
+    if bboxes_after_nms == []:
+        return np.zeros((1, 4))
+    return np.array(bboxes_after_nms)[..., 1:5]
