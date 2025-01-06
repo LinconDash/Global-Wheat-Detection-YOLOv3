@@ -31,6 +31,7 @@ EPOCHS = 10
 LEARNING_RATE = 1e-4
 CHECKPOINTS_DIR = "./checkpoints"
 SAVE_DIR = "./models"
+MODEL_NAME = "/yolo_model.h5"
 
 def train():
     # Data Ingestion and Cleaning:
@@ -108,17 +109,23 @@ def train():
         callbacks=callbacks
     )
 
+    print("Model Trained successfully.\n")
+
     # Save Model:
-    save_model(model, SAVE_DIR, filename="yolov3_demo.h5")
+    os.makedirs(SAVE_DIR, exist_ok=True)
+    save_path = os.path.join(SAVE_DIR, MODEL_NAME)
+    model.save(save_path)
+    print(f"Model saved successfully at : {save_path}")
 
     # Status of the Model :
-    print("Model Trained successfully.\n")
-    print("Training Status: \n")
+    print("="*50)
+    print("Model Status: \n")
     print("Epochs : " + str(len(history.history["loss"])))
     print("Final Training Loss : " + str(history.history["loss"][-1]))
     print("Final Validation Loss : " + str(history.history["val_loss"][-1]))
     print("Min. Training Loss : " + str(min(history.history["loss"])))
     print("Min. Validation Loss : " + str(min(history.history["val_loss"])))
+    print("="*50)
     print("\n\n")
     
     # Plot the loss curves :
