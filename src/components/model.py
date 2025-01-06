@@ -27,8 +27,8 @@ from src.exception import CustomException
 warnings.filterwarnings("ignore")
 
 class YOLOv3(Model):
-    def __init__(self):
-        super().__init__()
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
         logging.info("Creating YOLOv3 Model.")
 
         # Initial Convolutional layer:
