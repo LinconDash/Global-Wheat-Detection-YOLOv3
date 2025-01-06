@@ -27,7 +27,7 @@ def load_image_as_pixels(file_path:str, image_id:str):
     except Exception as e:
         raise CustomException(e, sys)
 
-def plot_bboxes(image_id:str, bboxes, data="train"):
+def plot_bboxes(image_id:str, bboxes, data="artifacts/train"):
     try:
         image = Image.open(data + "/" + image_id + ".jpg")
         image = image.resize((256, 256)) 
@@ -47,7 +47,7 @@ def draw_bbox(draw, bbox):
     except Exception as e:
         raise CustomException(e, sys)
 
-def plot_images_with_bboxes(image_ids, image_labels, data="train"):
+def plot_images_with_bboxes(image_ids, image_labels, data="artifacts/train"):
     try:
         img_pixels = []
         for img_id in np.unique(image_ids):
@@ -88,117 +88,166 @@ def show_images(n:int):
     except Exception as e:
         raise CustomException(e, sys)
 
-def load_model(save_dir, filename="yolov3_model.h5"):
-    load_path = os.path.join(save_dir, filename)
-    if not os.path.exists(load_path):
-        raise FileNotFoundError(f"No such model file exists : {load_path}")
-    
-    model = tf.keras.models.load_model(
-        load_path,
-        custom_objects={"YOLOv3":YOLOv3}
-    )
-    print(f"Model loaded successfully from : {load_path}")
-    return model
-
-def save_model(model, save_dir, filename="yolov3_model.h5"):
-    try:
-        os.makedirs(save_dir, exist_ok=True)
-        save_path = os.path.join(save_dir, filename)
-        model.save(save_path)
-        print(f"Model saved successfully at : {save_path}")
-    except Exception as e:
-        raise CustomException(e, sys)
-
 def predictions_to_bboxes(bboxes, image_grid):
     """
         Since we converted the image into 32X32 grid 
         we need to convert the predictions to bboxes for entire image for vizualization
         Converting from [x, y, w, h] to [x_min, y_min, x_max, y_max] along with the entire image dimension. (0 to 255)
     """
-    bboxes = bboxes.copy()
+    try:
+        bboxes = bboxes.copy()
     
-    im_width = (image_grid[:,:,2] * 32)
-    im_height = (image_grid[:,:,3] * 32)
-    
-    # descale x,y
-    bboxes[:,:,1] = (bboxes[:,:,1] * image_grid[:,:,2]) + image_grid[:,:,0]
-    bboxes[:,:,2] = (bboxes[:,:,2] * image_grid[:,:,3]) + image_grid[:,:,1]
-    bboxes[:,:,6] = (bboxes[:,:,6] * image_grid[:,:,2]) + image_grid[:,:,0]
-    bboxes[:,:,7] = (bboxes[:,:,7] * image_grid[:,:,3]) + image_grid[:,:,1]
-    
-    # descale width,height
-    bboxes[:,:,3] = bboxes[:,:,3] * im_width 
-    bboxes[:,:,4] = bboxes[:,:,4] * im_height
-    bboxes[:,:,8] = bboxes[:,:,8] * im_width 
-    bboxes[:,:,9] = bboxes[:,:,9] * im_height
-    
-    # centre x,y to top left x,y
-    bboxes[:,:,1] = bboxes[:,:,1] - (bboxes[:,:,3] / 2)
-    bboxes[:,:,2] = bboxes[:,:,2] - (bboxes[:,:,4] / 2)
-    bboxes[:,:,6] = bboxes[:,:,6] - (bboxes[:,:,8] / 2)
-    bboxes[:,:,7] = bboxes[:,:,7] - (bboxes[:,:,9] / 2)
-    
-    # width,heigth to x_max,y_max
-    bboxes[:,:,3] = bboxes[:,:,1] + bboxes[:,:,3]
-    bboxes[:,:,4] = bboxes[:,:,2] + bboxes[:,:,4]
-    bboxes[:,:,8] = bboxes[:,:,6] + bboxes[:,:,8]
-    bboxes[:,:,9] = bboxes[:,:,7] + bboxes[:,:,9]
-    
-    return bboxes
+        im_width = (image_grid[:,:,2] * 32)
+        im_height = (image_grid[:,:,3] * 32)
+        
+        # descale x,y
+        bboxes[:,:,1] = (bboxes[:,:,1] * image_grid[:,:,2]) + image_grid[:,:,0]
+        bboxes[:,:,2] = (bboxes[:,:,2] * image_grid[:,:,3]) + image_grid[:,:,1]
+        bboxes[:,:,6] = (bboxes[:,:,6] * image_grid[:,:,2]) + image_grid[:,:,0]
+        bboxes[:,:,7] = (bboxes[:,:,7] * image_grid[:,:,3]) + image_grid[:,:,1]
+        
+        # descale width,height
+        bboxes[:,:,3] = bboxes[:,:,3] * im_width 
+        bboxes[:,:,4] = bboxes[:,:,4] * im_height
+        bboxes[:,:,8] = bboxes[:,:,8] * im_width 
+        bboxes[:,:,9] = bboxes[:,:,9] * im_height
+        
+        # centre x,y to top left x,y
+        bboxes[:,:,1] = bboxes[:,:,1] - (bboxes[:,:,3] / 2)
+        bboxes[:,:,2] = bboxes[:,:,2] - (bboxes[:,:,4] / 2)
+        bboxes[:,:,6] = bboxes[:,:,6] - (bboxes[:,:,8] / 2)
+        bboxes[:,:,7] = bboxes[:,:,7] - (bboxes[:,:,9] / 2)
+        
+        # width,heigth to x_max,y_max
+        bboxes[:,:,3] = bboxes[:,:,1] + bboxes[:,:,3]
+        bboxes[:,:,4] = bboxes[:,:,2] + bboxes[:,:,4]
+        bboxes[:,:,8] = bboxes[:,:,6] + bboxes[:,:,8]
+        bboxes[:,:,9] = bboxes[:,:,7] + bboxes[:,:,9]
+        
+        return bboxes
+    except Exception as e:
+        raise CustomException(e, sys)
+
 
 def intersection_over_union(prediction, target):
     """
-        Returns the intersection over union area that is used for non max suppression
-        It returns for one anchor box only
+    Calculate the Intersection over Union (IoU) for two bounding boxes.
+
+    Args:
+        prediction (array-like): [x1, y1, x2, y2] for the predicted bounding box.
+        target (array-like): [x1, y1, x2, y2] for the target bounding box.
+
+    Returns:
+        float: IoU value.
     """
-    box1_x1 = prediction[..., 0]
-    box1_y1 = prediction[..., 1]
-    box1_x2 = prediction[..., 2]
-    box1_y2 = prediction[..., 3]  
-    box2_x1 = target[..., 0]
-    box2_y1 = target[..., 1]
-    box2_x2 = target[..., 2]
-    box2_y2 = target[..., 3]
+    try:
+        # Extract coordinates
+        box1_x1, box1_y1, box1_x2, box1_y2 = prediction
+        box2_x1, box2_y1, box2_x2, box2_y2 = target
 
-    x1 = max(box1_x1, box2_x1)
-    x2 = min(box1_x2, box2_x2)
-    y1= max(box1_y1, box2_y1)
-    y2 = min(box1_y2, box2_y2)
+        # Calculate intersection coordinates
+        x1 = max(box1_x1, box2_x1)
+        y1 = max(box1_y1, box2_y1)
+        x2 = min(box1_x2, box2_x2)
+        y2 = min(box1_y2, box2_y2)
 
-    intersection = (x2 - x1) * (y2 - y1)
+        # Compute intersection area
+        intersection = max(0, x2 - x1) * max(0, y2 - y1)
 
-    box1_area = abs((box1_x2 - box1_x1) * (box1_y2 - box1_y1))
-    box2_area = abs((box2_x2 - box2_x1) * (box2_y2 - box2_y1))
+        # Compute areas of the two boxes
+        box1_area = abs((box1_x2 - box1_x1) * (box1_y2 - box1_y1))
+        box2_area = abs((box2_x2 - box2_x1) * (box2_y2 - box2_y1))
+
+        # Compute union area and IoU
+        union = box1_area + box2_area - intersection
+        iou = intersection / (union + 1e-6)
+
+        return iou
+    except Exception as e:
+        raise CustomException(e, sys)
+
+def non_max_suppression(bboxes, iou_threshold=0.5, prob_threshold=0.5):
+    """
+    Perform Non-Max Suppression (NMS) on bounding boxes.
     
-    return intersection / (box1_area + box2_area - intersection + 1e-6)
+    Args:
+        bboxes (numpy.ndarray): Array of shape (N, 10), where N is the number of bounding boxes.
+                                Each box has 10 values: [prob1, x1, y1, w1, h1, prob2, x2, y2, w2, h2].
+        iou_threshold (float): IOU threshold for NMS.
+        prob_threshold (float): Probability threshold to filter boxes.
 
-def non_max_suppression(bboxes, iou_threshold, prob_threshold):
-    bboxes = bboxes.reshape(-1, 10)
-    
-    # Combine anchor box probabilities and filter by the threshold
-    combined_bboxes = []
-    for box in bboxes:
-        if box[0] > prob_threshold or box[5] > prob_threshold:
-            # Select the anchor with the higher probability
-            if box[0] >= box[5]:
-                combined_bboxes.append([box[0], *box[1:5]])  # First anchor
-            else:
-                combined_bboxes.append([box[5], *box[6:10]])  # Second anchor
+    Returns:
+        numpy.ndarray: Array of filtered bounding boxes after applying NMS.
+    """
+    try:
+        # Reshape to (N, 10) and filter by prob_threshold
+        bboxes = bboxes.reshape(-1, 10)
+        filtered_bboxes = []
 
-    # Sort by object probability
-    combined_bboxes = sorted(combined_bboxes, key=lambda x: x[0], reverse=True)
-    combined_bboxes = np.array(combined_bboxes)
-    bboxes_after_nms = []
+        for box in bboxes:
+            if box[0] > prob_threshold:  # Anchor 1
+                filtered_bboxes.append([box[0], *box[1:5]])
+            if box[5] > prob_threshold:  # Anchor 2
+                filtered_bboxes.append([box[5], *box[6:10]])
 
-    # Apply NMS
-    while len(combined_bboxes) > 0:
-        chosen_box = combined_bboxes[0]  # Select the box with the highest probability
-        bboxes_after_nms.append(chosen_box)
-        combined_bboxes = combined_bboxes[1:]  # Remove the chosen box
-        combined_bboxes = [
-            box for box in combined_bboxes
-            if intersection_over_union(chosen_box[1:5], box[1:5]) < iou_threshold
-        ]
-    if bboxes_after_nms == []:
-        return np.zeros((1, 4))
-    return np.array(bboxes_after_nms)[..., 1:5]
+        if not filtered_bboxes:
+            return np.empty((0, 4))  # Return empty array if no boxes pass threshold
+
+        # Convert to numpy array and sort by probability
+        filtered_bboxes = np.array(filtered_bboxes)
+        filtered_bboxes = filtered_bboxes[np.argsort(-filtered_bboxes[:, 0])]
+
+        bboxes_after_nms = []
+
+        # Apply Non-Max Suppression
+        while len(filtered_bboxes) > 0:
+            chosen_box = filtered_bboxes[0]
+            bboxes_after_nms.append(chosen_box)
+            filtered_bboxes = filtered_bboxes[1:]
+            filtered_bboxes = np.array([
+                box for box in filtered_bboxes
+                if intersection_over_union(chosen_box[1:], box[1:]) < iou_threshold
+            ])
+
+        return np.array(bboxes_after_nms)[:, 1:]  # Return only [x, y, w, h]
+    except Exception as e:
+        raise CustomException(e, sys)
+
+
+def process_predictions(predictions, image_ids, image_grid):
+    try:
+        bboxes = {}
+        for i, image_id in tqdm(enumerate(image_ids)):
+            predictions[i] = predictions_to_bboxes(predictions[i], image_grid)
+            bboxes[image_id] = non_max_suppression(predictions[i], iou_threshold=0.3, prob_threshold=0.3)
+            # back to coco shape
+            bboxes[image_id][:,2:4] = bboxes[image_id][:,2:4] - bboxes[image_id][:,0:2]
+        
+        return bboxes
+    except Exception as e:
+        raise CustomException(e, sys)
+
+def save_predictions(predictions, image_ids, image_pixels, dir_name):
+    try:
+        for image_id in image_ids:
+            image_array = image_pixels[image_id]
+            image = Image.fromarray(image_array)
+            draw = ImageDraw.Draw(image)
+            bboxes = predictions.get(image_id, [])
+            for bbox in bboxes:
+                x1, y1, x2, y2 = bbox
+                
+                draw.rectangle(
+                    [(x1, y1), (x2, y2)],
+                    outline="red",
+                    width=2
+                )
+
+            output_path = os.path.join(dir_name, f"{image_id}.png")
+            image.save(output_path)
+            print(f"Saved image: {output_path}")
+        
+        print("All images have be saved successfully.")
+
+    except Exception as e:
+        raise CustomException(e, sys)
