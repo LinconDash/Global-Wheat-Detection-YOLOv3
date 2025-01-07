@@ -235,13 +235,8 @@ def save_predictions(predictions, image_ids, image_pixels, dir_name):
             draw = ImageDraw.Draw(image)
             bboxes = predictions.get(image_id, [])
             for bbox in bboxes:
-                x1, y1, x2, y2 = bbox
-                
-                draw.rectangle(
-                    [(x1, y1), (x2, y2)],
-                    outline="red",
-                    width=2
-                )
+                x, y, w, h = bbox
+                draw.rectangle([x, y, x+w, y+h], width=2, outline="red")
 
             output_path = os.path.join(dir_name, f"{image_id}.png")
             image.save(output_path)

@@ -3,7 +3,7 @@ import sys
 import numpy as np
 import warnings
 import tensorflow as tf
-
+import matplotlib.pyplot as plt
 from tensorflow import keras
 from tensorflow.keras.optimizers import Adam
 
@@ -12,7 +12,6 @@ from src.components.data_generator import DataGenerator
 from src.components.loss import YOLOLoss
 from src.components.model import YOLOv3
 
-from src.utils import save_model
 from src.exception import CustomException
 from src.logger import logging
 
