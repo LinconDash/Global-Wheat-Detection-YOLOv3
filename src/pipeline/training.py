@@ -30,7 +30,7 @@ EPOCHS = 10
 LEARNING_RATE = 1e-4
 CHECKPOINTS_DIR = "./checkpoints"
 SAVE_DIR = "./models"
-MODEL_NAME = "/yolo_model.h5"
+MODEL_NAME = "yolo_model.h5"
 
 def train():
     # Data Ingestion and Cleaning:
@@ -127,14 +127,13 @@ def train():
     print("="*50)
     print("\n\n")
     
-    # Plot the loss curves :
+    return history
+
+if __name__ == "__main__":
+    history = train()
     fig, ax = plt.subplots(1, 2, figsize=(15, 5))
     ax[0].set_title('Training Loss')
     ax[0].plot(history.history['loss'])
     ax[1].set_title('Validation Loss')
     ax[1].plot(history.history['val_loss'])
     plt.show()
-
-
-if __name__ == "__main__":
-    train()

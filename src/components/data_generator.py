@@ -16,8 +16,8 @@ class DataGenerator(Sequence):
     """
     def __init__(
                 self,
-                image_ids, 
-                image_pixels, 
+                image_ids=None, 
+                image_pixels=None, 
                 image_labels=None, 
                 shuffle=False, 
                 batch_size=1, 
@@ -31,7 +31,8 @@ class DataGenerator(Sequence):
         self.shuffle = shuffle
         self.batch_size = batch_size
         self.transform = transform
-        self.on_epoch_end()
+        if self.image_ids is not None:
+            self.on_epoch_end()
         self.image_grid = self.create_image_grid()
 
         # These are the data augmentation techniques for the training data 

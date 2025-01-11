@@ -226,23 +226,3 @@ def process_predictions(predictions, image_ids, image_grid):
         return bboxes
     except Exception as e:
         raise CustomException(e, sys)
-
-def save_predictions(predictions, image_ids, image_pixels, dir_name):
-    try:
-        for image_id in image_ids:
-            image_array = image_pixels[image_id]
-            image = Image.fromarray(image_array)
-            draw = ImageDraw.Draw(image)
-            bboxes = predictions.get(image_id, [])
-            for bbox in bboxes:
-                x, y, w, h = bbox
-                draw.rectangle([x, y, x+w, y+h], width=2, outline="red")
-
-            output_path = os.path.join(dir_name, f"{image_id}.png")
-            image.save(output_path)
-            print(f"Saved image: {output_path}")
-        
-        print("All images have be saved successfully.")
-
-    except Exception as e:
-        raise CustomException(e, sys)
