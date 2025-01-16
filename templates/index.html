@@ -1,0 +1,33 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Wheat Detection App</title>
+  <link rel="stylesheet" href="{{ url_for('static', filename='css/styles.css') }}">
+</head>
+<body>
+  <h1>🌾 Drag and Drop Image for Wheat Detection 🌾</h1>
+  <div class="upload-area" id="upload-area">
+    Drag & Drop Image Here
+  </div>
+  <p>Or</p>
+  <input type="file" id="file-input" accept="image/*">
+  <div class="output" id="output">
+    <div>
+      <h3>Uploaded Image:</h3>
+      <img id="uploaded-image" src="" alt="Uploaded Image">
+    </div>
+    <div>
+      <h3>Resultant Image:</h3>
+      <img id="result-image" src="" alt="Result Image">
+    </div>
+  </div>
+
+  <footer>
+    <p>Created by <a href="https://portfolio-site-lincon.netlify.app/" target="_blank" style="text-decoration: none; color: aqua;">Lincon Dash</a></p>
+    <p>Copyright Lincon@2025</p>
+  </footer>
+  <script src="{{ url_for('static', filename='js/script.js') }}"></script>
+</body>
+</html>
