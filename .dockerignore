@@ -1,0 +1,6 @@
+artifacts
+logs
+env
+notebook
+predictions
+.git
