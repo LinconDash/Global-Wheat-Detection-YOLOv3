@@ -39,8 +39,7 @@ class DataGenerator(Sequence):
         self.train_augmentation = albu.Compose([
             albu.RandomSizedCrop(
                 min_max_height=(200, 200), 
-                height=256, 
-                width=256, 
+                size=[256, 256], 
                 p=0.8
             ),
             albu.OneOf([
