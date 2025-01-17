@@ -33,101 +33,105 @@ SAVE_DIR = "./models"
 MODEL_NAME = "yolo_model.h5"
 
 def train():
-    # Data Ingestion and Cleaning:
-    data = DataCleaner()
-    train_pixels = data.train_pixels
-    train_labels = data.train_labels
-    val_pixels = data.val_pixels
-    val_labels = data.val_labels
+    try:
+        # Data Ingestion and Cleaning:
+        data = DataCleaner()
+        train_pixels = data.train_pixels
+        train_labels = data.train_labels
+        val_pixels = data.val_pixels
+        val_labels = data.val_labels
 
-    print("Data Cleaned Successfully.\n\n")
-    
-    # Data Generator:
-    print("Creating Data generators.\n\n")
-    train_image_ids = list(train_pixels.keys())
-    val_image_ids = list(val_pixels.keys())
+        print("Data Cleaned Successfully.\n")
+        
+        # Data Generator:
+        print("Creating Data generators.\n")
+        train_image_ids = list(train_pixels.keys())
+        val_image_ids = list(val_pixels.keys())
 
-    train_generator = DataGenerator(
-        train_image_ids,
-        train_pixels,
-        train_labels,
-        shuffle=True,
-        batch_size=TRAIN_BATCH_SIZE,
-        transform=True
-    )
+        train_generator = DataGenerator(
+            train_image_ids,
+            train_pixels,
+            train_labels,
+            shuffle=True,
+            batch_size=TRAIN_BATCH_SIZE,
+            transform=True
+        )
 
-    val_generator = DataGenerator(
-        val_image_ids,
-        val_pixels,
-        val_labels,
-        shuffle=False,
-        batch_size=VAL_BATCH_SIZE,
-        transform=False
-    )
-    print("Data generator created successfully.\n\n")
-    
-    # Model:
-    model = YOLOv3()
+        val_generator = DataGenerator(
+            val_image_ids,
+            val_pixels,
+            val_labels,
+            shuffle=False,
+            batch_size=VAL_BATCH_SIZE,
+            transform=False
+        )
+        print("Data generator created successfully.\n")
+        
+        # Model:
+        model = YOLOv3()
 
-    # Optimizer and Loss function:
-    optimizer = Adam(LEARNING_RATE)
-    loss = YOLOLoss()
+        # Optimizer and Loss function:
+        optimizer = Adam(LEARNING_RATE)
+        loss = YOLOLoss()
 
-    model.compile(optimizer=optimizer, loss=loss)
-    print("Model compiled successfully.\n\n")
+        model.compile(optimizer=optimizer, loss=loss)
+        print("Model compiled successfully.\n")
 
-    # Checkpoint:
-    os.makedirs(CHECKPOINTS_DIR, exist_ok=True)
-    checkpoint_path = f"{CHECKPOINTS_DIR}/cp-{{epoch:04d}}.weights.h5"
-    checkpoint_callback = ModelCheckpoint(
-        filepath=checkpoint_path,
-        save_weights_only=True,
-        verbose=1
-    )
-    latest_checkpoint = tf.train.latest_checkpoint(CHECKPOINTS_DIR)
-    if latest_checkpoint:
-        print(f"Loading weights from the latest checkpoint: {latest_checkpoint}") 
-        model.load_weights(latest_checkpoint)
-        initial_epoch = int(latest_checkpoint.split("-")[-1].split(".")[0])
-    else:
-        print("No checkpoint found. Starting training from scratch.")
-        initial_epoch = 0
-    
-    # Callbacks:
-    callbacks = [
-        ReduceLROnPlateau(monitor="loss", patience=2, verbose=1),
-        EarlyStopping(monitor="loss", patience=5, verbose=1, restore_best_weights=True),
-        checkpoint_callback
-    ]
+        # Checkpoint:
+        os.makedirs(CHECKPOINTS_DIR, exist_ok=True)
+        checkpoint_path = f"{CHECKPOINTS_DIR}/cp-{{epoch:04d}}.weights.h5"
+        checkpoint_callback = ModelCheckpoint(
+            filepath=checkpoint_path,
+            save_weights_only=True,
+            verbose=1
+        )
+        latest_checkpoint = tf.train.latest_checkpoint(CHECKPOINTS_DIR)
+        if latest_checkpoint:
+            print(f"Loading weights from the latest checkpoint: {latest_checkpoint}") 
+            model.load_weights(latest_checkpoint)
+            initial_epoch = int(latest_checkpoint.split("-")[-1].split(".")[0])
+        else:
+            print("No checkpoint found. Starting training from scratch.")
+            initial_epoch = 0
+        
+        # Callbacks:
+        callbacks = [
+            ReduceLROnPlateau(monitor="loss", patience=2, verbose=1),
+            EarlyStopping(monitor="loss", patience=5, verbose=1, restore_best_weights=True),
+            checkpoint_callback
+        ]
 
-    # Model Training:
-    history = model.fit(
-        train_generator,
-        validation_data=val_generator,
-        epochs=EPOCHS,
-        callbacks=callbacks
-    )
+        # Model Training:
+        history = model.fit(
+            train_generator,
+            validation_data=val_generator,
+            epochs=EPOCHS,
+            callbacks=callbacks
+        )
 
-    print("Model Trained successfully.\n")
+        print("Model Trained successfully.\n")
 
-    # Save Model:
-    os.makedirs(SAVE_DIR, exist_ok=True)
-    save_path = os.path.join(SAVE_DIR, MODEL_NAME)
-    model.save(save_path)
-    print(f"Model saved successfully at : {save_path}")
+        # Save Model:
+        logging.info(f"Saving trained model in {SAVE_DIR} directory")
+        os.makedirs(SAVE_DIR, exist_ok=True)
+        save_path = os.path.join(SAVE_DIR, MODEL_NAME)
+        model.save(save_path)
+        print(f"Model saved successfully at : {save_path}")
 
-    # Status of the Model :
-    print("="*50)
-    print("Model Status: \n")
-    print("Epochs : " + str(len(history.history["loss"])))
-    print("Final Training Loss : " + str(history.history["loss"][-1]))
-    print("Final Validation Loss : " + str(history.history["val_loss"][-1]))
-    print("Min. Training Loss : " + str(min(history.history["loss"])))
-    print("Min. Validation Loss : " + str(min(history.history["val_loss"])))
-    print("="*50)
-    print("\n\n")
-    
-    return history
+        # Status of the Model :
+        print("="*50)
+        print("Model Status: \n")
+        print("Epochs : " + str(len(history.history["loss"])))
+        print("Final Training Loss : " + str(history.history["loss"][-1]))
+        print("Final Validation Loss : " + str(history.history["val_loss"][-1]))
+        print("Min. Training Loss : " + str(min(history.history["loss"])))
+        print("Min. Validation Loss : " + str(min(history.history["val_loss"])))
+        print("="*50)
+        print("\n\n")
+        
+        return history
+    except Exception as e:
+        raise CustomException(e, sys)
 
 if __name__ == "__main__":
     history = train()

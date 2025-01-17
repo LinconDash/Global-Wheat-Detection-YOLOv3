@@ -35,6 +35,7 @@ def predict():
         raise FileNotFoundError(f"No such model exists at : {model_path}")
 
     # Load and Predict test data
+    logging.info("Predicting test data")
     test_predictions = []
     test_image_ids = os.listdir(TEST_IMAGE_DIR)
     test_image_ids = [image_id[:-4] for image_id in test_image_ids]
@@ -65,6 +66,7 @@ def predict():
     test_predictions = process_predictions(test_predictions, test_image_ids, image_grid)
     
     os.makedirs(PRED_DIR, exist_ok=True)
+    logging.info(f"Saving the predictions in {PRED_DIR} directory")
     print(f"Saving the predictions in {PRED_DIR} directory.")
     for i, image_id in tqdm(enumerate(test_image_ids)):
         image = Image.open(TEST_IMAGE_DIR + "/" + image_id + ".jpg")
