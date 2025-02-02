@@ -9,7 +9,7 @@ The project follows a modularized architecture, ensuring clean, scalable, and ma
 To make the model easily accessible, the project has been deployed as a Flask web application. Users can upload an image through the web interface, and the model will process the image and return the output with detected wheat heads. To further improve accessibility and deployment efficiency, the entire application has been containerized using Docker, allowing seamless execution across different environments without dependency issues.
 
 ## Table of Contents 
-- Overview
+- [Overview](#overview)
 - Features
 - Project Structure
 - Dataset
